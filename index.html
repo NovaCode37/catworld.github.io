@@ -60,6 +60,22 @@
             transition: transform 0.3s;
         }
 
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4CAF50;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         .controls {
             display: flex;
             gap: 15px;
@@ -149,7 +165,8 @@
             height: 30px;
             position: absolute;
             cursor: pointer;
-            transition: left 0.5s linear;
+            transition: left 0.3s linear;
+            display: none;
         }
 
         .fun-fact {
@@ -190,6 +207,8 @@
                 🎉 Мне повезет!
             </button>
         </div>
+
+        <div class="loader" id="loader"></div>
 
         <div class="main-content">
             <div class="cat-card">
@@ -258,18 +277,23 @@
 
         // Основные функции
         async function loadRandomCat() {
+            showLoader();
             try {
                 const response = await fetch('https://api.thecatapi.com/v1/images/search');
-                const data = await response.json();
-                const catUrl = data[0].url;
+                if (!response.ok) throw new Error(`Ошибка HTTP: ${response.status}`);
                 
-                state.currentCat = catUrl;
-                document.getElementById('catImage').src = catUrl;
+                const data = await response.json();
+                if (!data[0]?.url) throw new Error('Некорректный ответ от сервера');
+                
+                state.currentCat = data[0].url;
+                document.getElementById('catImage').src = state.currentCat;
                 updateViews();
-                addToHistory(catUrl);
+                addToHistory(state.currentCat);
             } catch (error) {
-                console.error('Ошибка загрузки:', error);
+                console.error('Ошибка:', error);
                 alert('Котики спрятались! Попробуйте ещё раз 😿');
+            } finally {
+                hideLoader();
             }
         }
 
@@ -282,17 +306,18 @@
         function startGame() {
             clearInterval(state.gameInterval);
             const mouse = document.querySelector('.mouse');
+            mouse.style.display = 'block';
+            let position = -50;
             let direction = 1;
 
-            mouse.style.left = '-50px';
             state.gameInterval = setInterval(() => {
-                const currentLeft = parseInt(mouse.style.left) || -50;
-                const newPosition = currentLeft + (5 * direction);
+                const containerWidth = document.getElementById('gameContainer').offsetWidth;
+                position += direction * 3;
                 
-                if(newPosition > window.innerWidth - 100) direction = -1;
-                if(newPosition < -50) direction = 1;
+                if (position > containerWidth - 30) direction = -1;
+                if (position < -50) direction = 1;
                 
-                mouse.style.left = `${newPosition}px`;
+                mouse.style.left = `${position}px`;
             }, 50);
         }
 
@@ -300,16 +325,18 @@
             state.score++;
             updateStats();
             localStorage.setItem('catScore', state.score);
-            document.querySelector('.mouse').style.transform = 'scale(1.2)';
+            
+            const mouse = document.querySelector('.mouse');
+            mouse.style.transform = 'scale(1.2)';
             setTimeout(() => {
-                document.querySelector('.mouse').style.transform = 'scale(1)';
+                mouse.style.transform = 'scale(1)';
             }, 200);
         }
 
         function showRandomFact() {
             const factElement = document.getElementById('funFact');
-            factElement.style.display = 'block';
             factElement.textContent = FACTS[Math.floor(Math.random() * FACTS.length)];
+            factElement.style.display = 'block';
             
             setTimeout(() => {
                 factElement.style.display = 'none';
@@ -317,6 +344,14 @@
         }
 
         // Вспомогательные функции
+        function showLoader() {
+            document.getElementById('loader').style.display = 'block';
+        }
+
+        function hideLoader() {
+            document.getElementById('loader').style.display = 'none';
+        }
+
         function updateStats() {
             document.getElementById('likeCounter').textContent = `❤️ ${state.likes}`;
             document.getElementById('viewCounter').textContent = `👁️ ${state.views}`;
@@ -329,10 +364,12 @@
                 timestamp: new Date().toISOString()
             };
 
-            state.history = state.history.filter(item => item.url !== url);
-            state.history.unshift(newItem);
-            if(state.history.length > 15) state.history.pop();
+            // Удаляем дубликаты и ограничиваем историю
+            state.history = state.history
+                .filter(item => item.url !== url)
+                .slice(0, 14);
             
+            state.history.unshift(newItem);
             localStorage.setItem('catHistory', JSON.stringify(state.history));
             renderHistory();
         }
@@ -341,7 +378,7 @@
             const list = document.getElementById('historyList');
             list.innerHTML = state.history.map(item => `
                 <li class="history-item" onclick="loadFromHistory('${item.url}')">
-                    <img src="${item.url}" alt="История">
+                    <img src="${item.url}" alt="История" onerror="this.style.display='none'">
                     <div>
                         ${new Date(item.timestamp).toLocaleDateString()}
                         ${new Date(item.timestamp).toLocaleTimeString()}
