@@ -262,36 +262,39 @@
             'Самый старый кот прожил 38 лет'
         ];
 
-        let state = {
-            likes: parseInt(localStorage.getItem('catLikes')) || 0,
-            views: parseInt(localStorage.getItem('catViews')) || 0,
-            score: parseInt(localStorage.getItem('catScore')) || 0,
-            history: JSON.parse(localStorage.getItem('catHistory')) || [],
-            currentCat: null,
-            gameInterval: null
+        const initialData = {
+            likes: 0,
+            views: 0,
+            score: 0,
+            history: []
         };
 
-        // Инициализация
-        updateStats();
-        renderHistory();
+        // Инициализация состояния с проверкой
+        let state;
+        try {
+            state = JSON.parse(localStorage.getItem('catState')) || initialData;
+            if(!state.history) state.history = [];
+        } catch {
+            state = initialData;
+        }
 
         // Основные функции
         async function loadRandomCat() {
             showLoader();
             try {
-                const response = await fetch('https://api.thecatapi.com/v1/images/search');
-                if (!response.ok) throw new Error(`Ошибка HTTP: ${response.status}`);
+                const response = await fetch('https://corsproxy.io/?https://api.thecatapi.com/v1/images/search');
+                if (!response.ok) throw new Error(`HTTP error ${response.status}`);
                 
                 const data = await response.json();
-                if (!data[0]?.url) throw new Error('Некорректный ответ от сервера');
+                if (!data[0]?.url) throw new Error('Invalid response');
                 
                 state.currentCat = data[0].url;
                 document.getElementById('catImage').src = state.currentCat;
                 updateViews();
                 addToHistory(state.currentCat);
             } catch (error) {
-                console.error('Ошибка:', error);
-                alert('Котики спрятались! Попробуйте ещё раз 😿');
+                console.error('Error:', error);
+                showError();
             } finally {
                 hideLoader();
             }
@@ -300,7 +303,7 @@
         function handleLike() {
             state.likes++;
             updateStats();
-            localStorage.setItem('catLikes', state.likes);
+            saveState();
         }
 
         function startGame() {
@@ -311,36 +314,14 @@
             let direction = 1;
 
             state.gameInterval = setInterval(() => {
-                const containerWidth = document.getElementById('gameContainer').offsetWidth;
-                position += direction * 3;
+                const container = document.getElementById('gameContainer');
+                position += direction * (container.offsetWidth / 100);
                 
-                if (position > containerWidth - 30) direction = -1;
-                if (position < -50) direction = 1;
+                if(position > container.offsetWidth - 30) direction = -1;
+                if(position < -50) direction = 1;
                 
                 mouse.style.left = `${position}px`;
             }, 50);
-        }
-
-        function catchMouse() {
-            state.score++;
-            updateStats();
-            localStorage.setItem('catScore', state.score);
-            
-            const mouse = document.querySelector('.mouse');
-            mouse.style.transform = 'scale(1.2)';
-            setTimeout(() => {
-                mouse.style.transform = 'scale(1)';
-            }, 200);
-        }
-
-        function showRandomFact() {
-            const factElement = document.getElementById('funFact');
-            factElement.textContent = FACTS[Math.floor(Math.random() * FACTS.length)];
-            factElement.style.display = 'block';
-            
-            setTimeout(() => {
-                factElement.style.display = 'none';
-            }, 5000);
         }
 
         // Вспомогательные функции
@@ -352,6 +333,10 @@
             document.getElementById('loader').style.display = 'none';
         }
 
+        function showError() {
+            alert('Котики спрятались! Попробуйте ещё раз 😿');
+        }
+
         function updateStats() {
             document.getElementById('likeCounter').textContent = `❤️ ${state.likes}`;
             document.getElementById('viewCounter').textContent = `👁️ ${state.views}`;
@@ -359,26 +344,45 @@
         }
 
         function addToHistory(url) {
-            const newItem = {
-                url: url,
-                timestamp: new Date().toISOString()
-            };
-
-            // Удаляем дубликаты и ограничиваем историю
+            if(!isValidHttpUrl(url)) return;
+            
+            state.views++;
             state.history = state.history
                 .filter(item => item.url !== url)
                 .slice(0, 14);
             
-            state.history.unshift(newItem);
-            localStorage.setItem('catHistory', JSON.stringify(state.history));
+            state.history.unshift({
+                url: url,
+                timestamp: new Date().toISOString()
+            });
+            
+            saveState();
             renderHistory();
+        }
+
+        function isValidHttpUrl(string) {
+            try {
+                const url = new URL(string);
+                return url.protocol === 'http:' || url.protocol === 'https:';
+            } catch {
+                return false;
+            }
+        }
+
+        function saveState() {
+            try {
+                localStorage.setItem('catState', JSON.stringify(state));
+            } catch (error) {
+                console.error('Ошибка сохранения:', error);
+            }
         }
 
         function renderHistory() {
             const list = document.getElementById('historyList');
             list.innerHTML = state.history.map(item => `
                 <li class="history-item" onclick="loadFromHistory('${item.url}')">
-                    <img src="${item.url}" alt="История" onerror="this.style.display='none'">
+                    <img src="${item.url}" alt="История" 
+                         onerror="this.parentElement.remove()">
                     <div>
                         ${new Date(item.timestamp).toLocaleDateString()}
                         ${new Date(item.timestamp).toLocaleTimeString()}
@@ -388,14 +392,16 @@
         }
 
         function loadFromHistory(url) {
-            state.currentCat = url;
-            document.getElementById('catImage').src = url;
-            addToHistory(url);
-            updateViews();
+            if(isValidHttpUrl(url)) {
+                state.currentCat = url;
+                document.getElementById('catImage').src = url;
+                addToHistory(url);
+            }
         }
 
         // Первая загрузка
         loadRandomCat();
+        renderHistory();
     </script>
 </body>
 </html>
