@@ -70,5 +70,5 @@ graph TD
 
 
 
-  📧 Контакты: developer@catworld.ru | 
+  📧 Контакты: temon2k@yandex.ru | 
   [![Telegram](https://img.shields.io/badge/-Telegram-26A5E4?logo=telegram)](https://t.me/catworld_support)
