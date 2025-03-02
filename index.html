@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>КотоМир 😺</title>
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #2196F3;
+            --background: #f8f9fa;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: var(--background);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+
+        .cat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .cat-image-container {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            margin-bottom: 20px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .cat-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: transform 0.3s;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 15px 0;
+            font-size: 18px;
+            flex-wrap: wrap;
+        }
+
+        .sidebar {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .history-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .history-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            margin: 8px 0;
+            background: #f8f8f8;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .history-item:hover {
+            background: #f0f0f0;
+        }
+
+        .history-item img {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+
+        .game-container {
+            height: 60px;
+            background: #e9ecef;
+            border-radius: 10px;
+            margin: 15px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mouse {
+            width: 30px;
+            height: 30px;
+            position: absolute;
+            cursor: pointer;
+            transition: left 0.5s linear;
+        }
+
+        .fun-fact {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .cat-image-container {
+                height: 300px;
+            }
+
+            .controls .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>😺 Добро пожаловать в КотоМир!</h1>
+        <button class="btn btn-primary" onclick="loadRandomCat()">
+            🎉 Мне повезет!
+        </button>
+    </div>
+
+    <div class="main-content">
+        <div class="cat-card">
+            <div class="cat-image-container">
+                <img class="cat-image" id="catImage" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" alt="Случайный кот">
+            </div>
+
+            <div class="game-container" id="gameContainer">
+                <img src="https://cdn-icons-png.flaticon.com/512/785/785116.png"
+                     class="mouse"
+                     style="left: -50px; top: 15px;"
+                     onclick="catchMouse()">
+            </div>
+
+            <div class="stats">
+                <span id="likeCounter">❤️ 0</span>
+                <span id="viewCounter">👁️ 0</span>
+                <span id="scoreCounter">🏆 0</span>
+            </div>
+
+            <div class="fun-fact" id="funFact"></div>
+
+            <div class="controls">
+                <button class="btn btn-primary" onclick="handleLike()">
+                    ❤️ Лайк
+                </button>
+                <button class="btn btn-secondary" onclick="showRandomFact()">
+                    🧠 Факт
+                </button>
+                <button class="btn btn-secondary" onclick="startGame()">
+                    🎮 Играть
+                </button>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <h3>📖 История просмотров</h3>
+            <ul class="history-list" id="historyList"></ul>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Константы и состояние
+    const FACTS = [
+        'Кошки спят 70% своей жизни',
+        'Самый тяжелый кот весил 21.3 кг',
+        'Кошки чувствуют землетрясения за 10-15 минут до толчков',
+        'У кошек 32 мышцы в каждом ухе',
+        'Кошки не чувствуют сладкий вкус',
+        'Самый старый кот прожил 38 лет'
+    ];
+
+    let state = {
+        likes: parseInt(localStorage.getItem('catLikes')) || 0,
+        views: parseInt(localStorage.getItem('catViews')) || 0,
+        score: parseInt(localStorage.getItem('catScore')) || 0,
+        history: JSON.parse(localStorage.getItem('catHistory')) || [],
+        currentCat: null,
+        gameInterval: null
+    };
+
+    // Инициализация
+    updateStats();
+    renderHistory();
+
+    // Основные функции
+    async function loadRandomCat() {
+        try {
+            const response = await fetch('https://api.thecatapi.com/v1/images/search');
+            const data = await response.json();
+            const catUrl = data[0].url;
+
+            state.currentCat = catUrl;
+            document.getElementById('catImage').src = catUrl;
+            updateViews();
+            addToHistory(catUrl);
+        } catch (error) {
+            console.error('Ошибка загрузки:', error);
+            alert('Котики спрятались! Попробуйте ещё раз 😿');
+        }
+    }
+
+    function handleLike() {
+        state.likes++;
+        updateStats();
+        localStorage.setItem('catLikes', state.likes);
+    }
+
+    function startGame() {
+        clearInterval(state.gameInterval);
+        const mouse = document.querySelector('.mouse');
+        let direction = 1;
+
+        mouse.style.left = '-50px';
+        state.gameInterval = setInterval(() => {
+            const currentLeft = parseInt(mouse.style.left) || -50;
+            const newPosition = currentLeft + (5 * direction);
+
+            if(newPosition > window.innerWidth - 100) direction = -1;
+            if(newPosition < -50) direction = 1;
+
+            mouse.style.left = `${newPosition}px`;
+        }, 50);
+    }
+
+    function catchMouse() {
+        state.score++;
+        updateStats();
+        localStorage.setItem('catScore', state.score);
+        document.querySelector('.mouse').style.transform = 'scale(1.2)';
+        setTimeout(() => {
+            document.querySelector('.mouse').style.transform = 'scale(1)';
+        }, 200);
+    }
+
+    function showRandomFact() {
+        const factElement = document.getElementById('funFact');
+        factElement.style.display = 'block';
+        factElement.textContent = FACTS[Math.floor(Math.random() * FACTS.length)];
+
+        setTimeout(() => {
+            factElement.style.display = 'none';
+        }, 5000);
+    }
+
+    // Вспомогательные функции
+    function updateStats() {
+        document.getElementById('likeCounter').textContent = `❤️ ${state.likes}`;
+        document.getElementById('viewCounter').textContent = `👁️ ${state.views}`;
+        document.getElementById('scoreCounter').textContent = `🏆 ${state.score}`;
+    }
+
+    function addToHistory(url) {
+        const newItem = {
+            url: url,
+            timestamp: new Date().toISOString()
+        };
+
+        state.history = state.history.filter(item => item.url !== url);
+        state.history.unshift(newItem);
+        if(state.history.length > 15) state.history.pop();
+
+        localStorage.setItem('catHistory', JSON.stringify(state.history));
+        renderHistory();
+    }
+
+    function renderHistory() {
+        const list = document.getElementById('historyList');
+        list.innerHTML = state.history.map(item => `
+                <li class="history-item" onclick="loadFromHistory('${item.url}')">
+                    <img src="${item.url}" alt="История">
+                    <div>
+                        ${new Date(item.timestamp).toLocaleDateString()}
+                        ${new Date(item.timestamp).toLocaleTimeString()}
+                    </div>
+                </li>
+            `).join('');
+    }
+
+    function loadFromHistory(url) {
+        state.currentCat = url;
+        document.getElementById('catImage').src = url;
+        addToHistory(url);
+        updateViews();
+    }
+
+    // Первая загрузка
+    loadRandomCat();
+</script>
+</body>
+</html>
